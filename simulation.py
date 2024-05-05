@@ -4,6 +4,7 @@ import datetime as dt
 import csv 
 import pandas as pd
 import json
+import os
 
 def choose_chargertype(delay_wgt,c_fast,c_slow,L_fast,L_slow,mu_fast,mu_slow,servetime_fast,servetime_slow,p_fast,p_slow):
     #For a given customer and set of conditions about queue lengths, decide which charger type to use
@@ -324,9 +325,13 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                     arriving_cust.departure_time = departure_time #record so we know which customer to remove at this time
                     upcoming_events.append(('leave fast', departure_time))
                     
+                    #log extra event - for metadata purposes
+                    event_log.append(('served by fast', clock))
                 else:
                     #all chargers full
                     fast_queue.append(arriving_cust)
+                    #log extra event - for metadata purposes
+                    event_log.append(('waiting for fast', clock))
 
             elif charger_choice == 'slow':
                 if len(slow_servers)< c_slow:
@@ -336,10 +341,16 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                     departure_time = clock + arriving_cust.servetime_slow
                     arriving_cust.departure_time = departure_time #record so we know which customer to remove at this time
                     upcoming_events.append(('leave slow', departure_time))
+
+                    #log extra event - for metadata purposes
+                    event_log.append(('served by slow', clock))
                     
                 else:
                     #all chargers full
                     slow_queue.append(arriving_cust)
+
+                    #log extra event - for metadata purposes
+                    event_log.append(('waiting for slow', clock))
 
             else:
                 print("FAILED - Invalid charger type")
@@ -351,6 +362,10 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
             if idx_arriving_cust< len(customer_results):
                 next_customer = customer_results[idx_arriving_cust]
                 upcoming_events.append(('arrival', next_customer.arrival_time))
+
+            else:
+                #log extra event - for metadata purposes
+                event_log.append((f'arrivals completed - {idx_arriving_cust}', clock))
             
 
         elif event[0] == 'leave fast':
@@ -381,6 +396,9 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                 #add their departure event to the upcoming events 
                 upcoming_events.append(('leave fast', departure_time))
 
+                #log extra event - for metadata purposes
+                event_log.append(('move cust. from queue to fast server', clock))
+
 
         elif event[0] == 'leave slow':
             #have customer depart 
@@ -409,6 +427,9 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                 #add their departure event to the upcoming events 
                 upcoming_events.append(('leave slow', departure_time))
 
+                #log extra event - for metadata purposes
+                event_log.append(('move cust. from queue to slow server', clock))
+
         else:
             print("FAILED - Invalid event")
             event_log.append(('FAIL - invalid event', -1))
@@ -419,6 +440,7 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
 
     #Sum of realized costs for all customers, also computes true wait times
     total_cost = np.sum([customer.compute_true_cost() for customer in customer_results])
+    event_log.append(('Finished - Success', 1))
 
     return total_cost, customer_results, event_log
 
@@ -456,7 +478,7 @@ def make_customer_results_file(customer_results, filename):
     #File of customers and their decisions, the order of the customers in the CSV is the order they appear in the simulation
 
     customer_results_dicts = [customer_to_dict(customer) for customer in customer_results]
-    pd.DataFrame(customer_results).to_csv(f'{filename}.csv')
+    pd.DataFrame(customer_results_dicts).to_csv(f'{filename}.csv')
 
 def make_event_log_file(event_log, filename):
     events = [list(event) for event in event_log]
@@ -473,22 +495,22 @@ def make_param_file(param_dict, filename):
 if __name__ == "__main__":
     #input params (do NOT change these between trials)
     #TODO change these obviously from what they are now
-    num_customers=0
-    mu_fast=0.1
-    mu_slow=0.1
-    mean_wgt_ds=0
-    mean_wgt_ps=0
-    c_fast=0.1
-    c_slow=0.1
-    lamb=0.1
+    num_customers=20
+    mu_fast=30
+    mu_slow=90
+    mean_wgt_ds=10
+    mean_wgt_ps=2
+    c_fast=2
+    c_slow=2
+    lamb= 0.05
     pct_ds=0.5
 
     #prices (change these between trials)
-    p_fast=0.1
-    p_slow=0.1
+    p_fast=0.5
+    p_slow=0
 
     #random seed, if any (can be None)
-    random_seed = None
+    random_seed = 42
 
     #whether to log events (failure events always logged regardless of parameter)
     log_events = True
@@ -497,7 +519,7 @@ if __name__ == "__main__":
                                                         pct_ds, log_events, random_seed)
     
     #unique string for filenames, the time at which the results were generated for this run
-    date_str = dt.datetime.now().strftime('%b%-d-%I-%M%p')
+    date_str = dt.datetime.now().strftime('%b%-d-%I-%M-%-S%p')
 
     print(total_cost)
 
@@ -516,8 +538,9 @@ if __name__ == "__main__":
                   'log_events': log_events}
 
     #Save all results
-
-    make_param_file(param_dict, f'params_{date_str}')
-    make_total_cost_file(total_cost, f'total_cost_{date_str}')
-    make_customer_results_file(customer_results, f'customer_results_{date_str}')
-    make_event_log_file(event_log, f'event_log_{date_str}')
+    results_folder = f'results/results_{date_str}'
+    os.mkdir(results_folder)
+    make_param_file(param_dict, f'{results_folder}/params_{date_str}')
+    make_total_cost_file(total_cost, f'{results_folder}/total_cost_{date_str}')
+    make_customer_results_file(customer_results, f'{results_folder}/customer_results_{date_str}')
+    make_event_log_file(event_log, f'{results_folder}/event_log_{date_str}')
