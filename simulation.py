@@ -220,7 +220,7 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
     event_log = []
 
     #Get all random customer properties that can be computed for each cust. without knowing anything about other customers.
-    arrival_times, interarrival_times, delay_wgts, sens_types, servetimes_fast,servetimes_slow = generate_cust(lamb,\
+    arrival_times, interarrival_times, delay_wgts, sens_types, servetimes_fast, servetimes_slow = generate_cust(lamb,\
                                                                                                                 mu_fast,\
                                                                                                                 mu_slow,\
                                                                                                                 mean_wgt_ds,\
@@ -258,19 +258,16 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
     fast_servers = [] #max c_fast
     slow_servers = [] #max c_slow
 
-    #give the event name and the associated clock time the next event of this queue finishes
+    #give the event name and the associated future clock time when the event occurs
     #events: 'arrival', 'leave fast', 'leave slow'
-    #TODO option to store these all in a master list and return so that we can debug if needed?
     upcoming_events = [('arrival', customer_results[idx_arriving_cust].arrival_time)] 
 
-    #while max(len(slow_queue), len(fast_queue), len(fast_servers), len(slow_servers))>0 or idx_arriving_cust < len(customer_results):
     while len(upcoming_events) >0:
         #Find which event occurs next based on time: someone arrives or someone departs
         #Organize system after each event, should never have someone in a queue if a server is open
         #Update the clock accordingly
 
-        #First sanity check the system
-
+        #Sanity check
         if len(fast_servers)>c_fast:
             print('FAILED - too many people fast charging')
             event_log.append(('FAIL - too many fast charging', -1))
@@ -313,7 +310,8 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
             arriving_cust.L_slow = L_slow
 
 
-            #if not all chargers are full, serve immediately and add their departure event to the list of events we have to consider 
+            #if not all chargers are full, serve immediately 
+            #and add their departure event to the list of events we have to consider 
             #else, add them to the charger queue
 
             if charger_choice == 'fast':
@@ -367,6 +365,7 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
             if idx_arriving_cust< len(customer_results):
                 next_customer = customer_results[idx_arriving_cust]
                 upcoming_events.append(('arrival', next_customer.arrival_time))
+                #Note: could have computed arrival time here, rather than before
 
             else:
                 if log_events:
@@ -520,7 +519,7 @@ if __name__ == "__main__":
     p_slow=0
 
     #random seed, if any (can be None)
-    random_seed = 42
+    random_seed = None
 
     #whether to log events (failure events always logged regardless of parameter)
     log_events = True
