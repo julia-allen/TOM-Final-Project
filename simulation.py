@@ -325,13 +325,16 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                     arriving_cust.departure_time = departure_time #record so we know which customer to remove at this time
                     upcoming_events.append(('leave fast', departure_time))
                     
-                    #log extra event - for metadata purposes
-                    event_log.append(('served by fast', clock))
+                    if log_events:
+                        #log extra event - for metadata purposes
+                        event_log.append(('served by fast', clock))
                 else:
                     #all chargers full
                     fast_queue.append(arriving_cust)
-                    #log extra event - for metadata purposes
-                    event_log.append(('waiting for fast', clock))
+
+                    if log_events:
+                        #log extra event - for metadata purposes
+                        event_log.append(('waiting for fast', clock))
 
             elif charger_choice == 'slow':
                 if len(slow_servers)< c_slow:
@@ -342,15 +345,17 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                     arriving_cust.departure_time = departure_time #record so we know which customer to remove at this time
                     upcoming_events.append(('leave slow', departure_time))
 
-                    #log extra event - for metadata purposes
-                    event_log.append(('served by slow', clock))
+                    if log_events:
+                        #log extra event - for metadata purposes
+                        event_log.append(('served by slow', clock))
                     
                 else:
                     #all chargers full
                     slow_queue.append(arriving_cust)
 
-                    #log extra event - for metadata purposes
-                    event_log.append(('waiting for slow', clock))
+                    if log_events:
+                        #log extra event - for metadata purposes
+                        event_log.append(('waiting for slow', clock))
 
             else:
                 print("FAILED - Invalid charger type")
@@ -364,8 +369,9 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                 upcoming_events.append(('arrival', next_customer.arrival_time))
 
             else:
-                #log extra event - for metadata purposes
-                event_log.append((f'arrivals completed - {idx_arriving_cust}', clock))
+                if log_events:
+                    #log extra event - for metadata purposes
+                    event_log.append((f'arrivals completed - {idx_arriving_cust}', clock))
             
 
         elif event[0] == 'leave fast':
@@ -396,8 +402,9 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                 #add their departure event to the upcoming events 
                 upcoming_events.append(('leave fast', departure_time))
 
-                #log extra event - for metadata purposes
-                event_log.append(('move cust. from queue to fast server', clock))
+                if log_events:
+                    #log extra event - for metadata purposes
+                    event_log.append(('move cust. from queue to fast server', clock))
 
 
         elif event[0] == 'leave slow':
@@ -427,8 +434,9 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                 #add their departure event to the upcoming events 
                 upcoming_events.append(('leave slow', departure_time))
 
-                #log extra event - for metadata purposes
-                event_log.append(('move cust. from queue to slow server', clock))
+                if log_events:
+                    #log extra event - for metadata purposes
+                    event_log.append(('move cust. from queue to slow server', clock))
 
         else:
             print("FAILED - Invalid event")
@@ -496,6 +504,8 @@ if __name__ == "__main__":
     #input params (do NOT change these between trials)
     #TODO change these obviously from what they are now
     num_customers=20
+
+    description = "Testing simulator"
     mu_fast=30
     mu_slow=90
     mean_wgt_ds=10
@@ -535,7 +545,8 @@ if __name__ == "__main__":
                   'p_fast': p_fast,\
                   'p_slow': p_slow,\
                   'random_seed': random_seed,\
-                  'log_events': log_events}
+                  'log_events': log_events, 
+                  'description': description}
 
     #Save all results
     results_folder = f'results/results_{date_str}'
