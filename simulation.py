@@ -504,6 +504,61 @@ def make_param_file(param_dict, filename):
         json.dump(param_dict, outfile)
 
 
+def run_simulations(folder_name, num_runs, num_customers,p_fast,p_slow,mu_fast,mu_slow,\
+                   mean_wgt_ds,mean_wgt_ps, std_dev_wgt_ds, std_dev_wgt_ps,\
+                   c_fast,c_slow,lamb, pct_ds,\
+                   log_events = False, random_seeds=None):
+    
+    #unique string for filenames, the time at which the results were generated for this run
+    date_str = dt.datetime.now().strftime('%b%-d-%I-%M-%-S%p')
+
+    results_folder = f'{folder_name}/results_{date_str}'
+
+    #all results from set of parameters go in this folder
+    os.mkdir(results_folder)
+    
+
+    param_dict = {'num_runs': num_runs,\
+                  'num_customers': num_customers,\
+                  'mu_fast': mu_fast,\
+                  'mu_slow': mu_slow,\
+                  'mean_wgt_ds': mean_wgt_ds,\
+                  'mean_wgt_ps': mean_wgt_ps,\
+                  'std_dev_wgt_ds': std_dev_wgt_ds,\
+                  'std_dev_wgt_ps': std_dev_wgt_ps,\
+                  'c_fast': c_fast,\
+                  'c_slow': c_slow,\
+                  'lamb': lamb,\
+                  'pct_ds': pct_ds,\
+                  'p_fast': p_fast,\
+                  'p_slow': p_slow,\
+                  'random_seed': random_seeds,\
+                  'log_events': log_events, 
+                  'description': description}
+    
+    #save run params
+    make_param_file(param_dict, f'{results_folder}/params_{date_str}')
+    
+    for run in range(num_runs):
+        run_str = f'run{run}'
+        
+        #generate the results from each run with identical params
+        total_cost, customer_results, event_log = simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,\
+                                                        mean_wgt_ds,mean_wgt_ps,\
+                                                        std_dev_wgt_ds, std_dev_wgt_ps,\
+                                                            c_fast,c_slow,lamb,\
+                                                            pct_ds, log_events, random_seeds[run])
+        
+        print(f'{run_str}: {total_cost}')
+
+        #Save all results
+
+        make_total_cost_file(total_cost, f'{results_folder}/total_cost_{date_str}_{run_str}')
+        make_customer_results_file(customer_results, f'{results_folder}/customer_results_{date_str}_{run_str}')
+        make_event_log_file(event_log, f'{results_folder}/event_log_{date_str}_{run_str}')
+    
+
+
 if __name__ == "__main__":
     #input params (do NOT change these between trials)
     #TODO change these obviously from what they are now
@@ -528,11 +583,11 @@ if __name__ == "__main__":
     pct_ds=0.3
 
     #prices (change these between trials)
-    p_fast=0.5
+    p_fast=[0.5, 1] 
     p_slow=0
 
     #random seeds, if any (can be None)
-    #up to 20 here --> if num_runs=10, we will only use the first 10
+    #if num_runs=10, we will only use the first 10, etc.
     random_seeds = [975, 898, 389, 672, 89, 470, 970, 17, 340, \
                     925, 712, 609, 481, 385, 883, 833, 911, 264, 872, 553]
 
@@ -542,45 +597,17 @@ if __name__ == "__main__":
     #unique string for filenames, the time at which the results were generated for this run
     date_str = dt.datetime.now().strftime('%b%-d-%I-%M-%-S%p')
 
-    #make file to store runs
-    results_folder = f'results/results_{date_str}'
+    #make folder which stores, for each set of parameters, all simulation runs
+    results_folder = f'results/gridsearch_{date_str}'
     os.mkdir(results_folder)
 
-    param_dict = {'num_runs': num_runs,\
-                  'num_customers': num_customers,\
-                  'mu_fast': mu_fast,\
-                  'mu_slow': mu_slow,\
-                  'mean_wgt_ds': mean_wgt_ds,\
-                  'mean_wgt_ps': mean_wgt_ps,\
-                  'std_dev_wgt_ds': std_dev_wgt_ds,\
-                  'std_dev_wgt_ps': std_dev_wgt_ps,\
-                  'c_fast': c_fast,\
-                  'c_slow': c_slow,\
-                  'lamb': lamb,\
-                  'pct_ds': pct_ds,\
-                  'p_fast': p_fast,\
-                  'p_slow': p_slow,\
-                  'random_seed': random_seeds,\
-                  'log_events': log_events, 
-                  'description': description}
-    
-    #save run params
-    make_param_file(param_dict, f'{results_folder}/params_{date_str}')
+    #Change the grid search to anything you want here - just run run_simulations for each 
+    #set of parameters
+    for price in p_fast: 
 
-    for run in range(num_runs):
-        run_str = f'run{run}'
-
-        total_cost, customer_results, event_log = simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,\
+        #Runs num_runs simulations with this set of parameters
+        run_simulations(results_folder, num_runs, num_customers,price,p_slow,mu_fast,mu_slow,\
                                                         mean_wgt_ds,mean_wgt_ps,\
                                                         std_dev_wgt_ds, std_dev_wgt_ps,\
                                                             c_fast,c_slow,lamb,\
-                                                            pct_ds, log_events, random_seeds[run])
-
-        print(f'{run_str}: {total_cost}')
-
-        #Save all results
-
-
-        make_total_cost_file(total_cost, f'{results_folder}/total_cost_{date_str}_{run_str}')
-        make_customer_results_file(customer_results, f'{results_folder}/customer_results_{date_str}_{run_str}')
-        make_event_log_file(event_log, f'{results_folder}/event_log_{date_str}_{run_str}')
+                                                            pct_ds, log_events, random_seeds)
