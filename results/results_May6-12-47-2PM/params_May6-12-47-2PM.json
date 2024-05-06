@@ -1,0 +1,1 @@
+{"num_customers": 20, "mu_fast": 30, "mu_slow": 90, "mean_wgt_ds": 10, "mean_wgt_ps": 2, "std_dev_wgt_ds": 1.0, "std_dev_wgt_ps": 1.0, "c_fast": 2, "c_slow": 2, "lamb": 0.05, "pct_ds": 0.5, "p_fast": 0.5, "p_slow": 0, "random_seed": null, "log_events": true, "description": "Testing simulator"}
