@@ -38,12 +38,14 @@ def choose_chargertype(delay_wgt,c_fast,c_slow,L_fast,L_slow,mu_fast,mu_slow,ser
     else:
         return "slow", est_cost_fast, est_cost_slow
     
-def generate_cust(lamb, mu_fast, mu_slow, mean_wgt_ds, mean_wgt_ps, num_customers=1, pct_ds=0.5):
+def generate_cust(lamb, mu_fast, mu_slow, mean_wgt_ds, mean_wgt_ps, \
+                  std_dev_wgt_ds, std_dev_wgt_ps, num_customers=1, pct_ds=0.5):
     #generate a set of customer parameters for each arriving customer.
     #modified to generate everything for multiple customers (for speed purposes)
     #Input: lamb: total arrival rate for customers into the system
             #mu_fast, mu_slow: average service TIME (not rate) at each station
             #mean_wgt_ds, mean_wgt_ps: average values for the delay weight for delay- and price- sensitive customers
+            #std_dev_wgt_ds, std_dev_wgt_ps: standard deviations for the delay weight
             #pct_ds: percent of the people arriving who are sampled from the delay sensitive distribution, preemptively set to 0.5
     #Output: delay_wgt: the weight applied to a customer's delay, from a bimodal normal dist
             #servetime_fast, servetime_slow: the amount of time a customer would spend at the fast or slow station
@@ -73,10 +75,10 @@ def generate_cust(lamb, mu_fast, mu_slow, mean_wgt_ds, mean_wgt_ps, num_customer
 
     for ct in cts:
         if ct<pct_ds:
-            delay_wgts.append(max(np.random.normal(mean_wgt_ds, mean_wgt_ps/2), 0))
+            delay_wgts.append(max(np.random.normal(mean_wgt_ds, std_dev_wgt_ds), 0))
             sens_types.append('delay')
         else:
-            delay_wgts.append(max(np.random.normal(mean_wgt_ps, mean_wgt_ps/2), 0))
+            delay_wgts.append(max(np.random.normal(mean_wgt_ps, std_dev_wgt_ps), 0))
             sens_types.append('price')
 
     #old code
@@ -94,25 +96,26 @@ def generate_cust(lamb, mu_fast, mu_slow, mean_wgt_ds, mean_wgt_ps, num_customer
 
     return arrival_times, interarrival_times, delay_wgts, sens_types, servetimes_fast,servetimes_slow
 
-def arrival(L_slow,L_fast,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps,c_fast,c_slow,p_fast,p_slow, pct_ds):
-    #every time a customer arrives. Takes in the current state information, as well as constant params
-    #Input: #L_slow,L_fast: the queue lengths (INCLUDING ppl charging) at time arr_time
-            #mu_fast, mu_slow, mean_wgt_ds, mean_wgt_ps, pct_ds: constant params, defined in generate_cust()
-            #c_fast,c_slow: num chargers of each type
-            #p_fast,p_slow: price of each type. "constant" within each simulation, but we manually change between them
-    #Output:L_slow,L_fast: new queue lengths after customer chooses a queue
+#old code
+# def arrival(L_slow,L_fast,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps,c_fast,c_slow,p_fast,p_slow, pct_ds):
+#     #every time a customer arrives. Takes in the current state information, as well as constant params
+#     #Input: #L_slow,L_fast: the queue lengths (INCLUDING ppl charging) at time arr_time
+#             #mu_fast, mu_slow, mean_wgt_ds, mean_wgt_ps, pct_ds: constant params, defined in generate_cust()
+#             #c_fast,c_slow: num chargers of each type
+#             #p_fast,p_slow: price of each type. "constant" within each simulation, but we manually change between them
+#     #Output:L_slow,L_fast: new queue lengths after customer chooses a queue
 
-    delay_wgt,servetime_fast,servetime_slow=generate_cust(mu_fast, mu_slow, mean_wgt_ds, mean_wgt_ps, pct_ds)
+#     delay_wgt,servetime_fast,servetime_slow=generate_cust(mu_fast, mu_slow, mean_wgt_ds, mean_wgt_ps, pct_ds)
 
-    charger_choice=choose_chargertype(delay_wgt,c_fast,c_slow,L_fast,L_slow,mu_fast,mu_slow,servetime_fast,servetime_slow,p_fast,p_slow)
+#     charger_choice=choose_chargertype(delay_wgt,c_fast,c_slow,L_fast,L_slow,mu_fast,mu_slow,servetime_fast,servetime_slow,p_fast,p_slow)
     
-    if charger_choice=="fast":
-        L_fast=L_fast+1
-    else:
-        L_slow=L_slow+1
+#     if charger_choice=="fast":
+#         L_fast=L_fast+1
+#     else:
+#         L_slow=L_slow+1
     
-    #TODO: ALL this does rn is updates queue lengths. But also every person needs a total cost calculated. Use this method only if it's helpful, ignore otherwise
-    return L_fast,L_slow
+#     #TODO: ALL this does rn is updates queue lengths. But also every person needs a total cost calculated. Use this method only if it's helpful, ignore otherwise
+#     return L_fast,L_slow
 
 class Customer:
     
@@ -197,7 +200,7 @@ class Customer:
         return self.true_cost
 
 
-def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps,c_fast,c_slow,lamb, pct_ds,\
+def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps, std_dev_wgt_ds, std_dev_wgt_ps, c_fast,c_slow,lamb, pct_ds,\
              log_events = False, random_seed=None):
     #run the simulation
 
@@ -225,6 +228,8 @@ def simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps
                                                                                                                 mu_slow,\
                                                                                                                 mean_wgt_ds,\
                                                                                                                 mean_wgt_ps,\
+                                                                                                                std_dev_wgt_ds,\
+                                                                                                                std_dev_wgt_ps,\
                                                                                                                 num_customers,\
                                                                                                                 pct_ds)
 
@@ -509,6 +514,11 @@ if __name__ == "__main__":
     mu_slow=90
     mean_wgt_ds=10
     mean_wgt_ps=2
+
+    #both have the same std. dev for now
+    std_dev_wgt_ds = mean_wgt_ps/2
+    std_dev_wgt_ps = mean_wgt_ps/2
+
     c_fast=2
     c_slow=2
     lamb= 0.05
@@ -524,7 +534,10 @@ if __name__ == "__main__":
     #whether to log events (failure events always logged regardless of parameter)
     log_events = True
 
-    total_cost, customer_results, event_log = simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,mean_wgt_ds,mean_wgt_ps,c_fast,c_slow,lamb,\
+    total_cost, customer_results, event_log = simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,\
+                                                       mean_wgt_ds,mean_wgt_ps,\
+                                                       std_dev_wgt_ds, std_dev_wgt_ps,\
+                                                        c_fast,c_slow,lamb,\
                                                         pct_ds, log_events, random_seed)
     
     #unique string for filenames, the time at which the results were generated for this run
@@ -537,6 +550,8 @@ if __name__ == "__main__":
                   'mu_slow': mu_slow,\
                   'mean_wgt_ds': mean_wgt_ds,\
                   'mean_wgt_ps': mean_wgt_ps,\
+                  'std_dev_wgt_ds': std_dev_wgt_ds,\
+                  'std_dev_wgt_ps': std_dev_wgt_ps,\
                   'c_fast': c_fast,\
                   'c_slow': c_slow,\
                   'lamb': lamb,\
