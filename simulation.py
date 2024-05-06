@@ -173,6 +173,7 @@ class Customer:
         self.true_total_wait = None #true customer wait time (not their estimate)
         self.true_queue_wait = None #time customer waited in system without service
         self.true_servetime = None #actual service time of customer (for charger they chose)
+        self.charge_price = None #the total price paid at charge time for this customer
 
     def compute_true_cost(self):
         #The true cost that the customer incurs from their choice. 
@@ -190,12 +191,14 @@ class Customer:
                 self.true_cost = self.p_fast*self.servetime_fast + self.delay_wgt*(true_wait)
                 self.true_queue_wait = true_wait - self.servetime_fast
                 self.true_servetime = self.servetime_fast
+                self.charge_price = self.p_fast* self.true_servetime
 
             else:
 
                 self.true_cost = self.p_slow*self.servetime_slow + self.delay_wgt*(true_wait)
                 self.true_queue_wait = true_wait - self.servetime_slow
                 self.true_servetime = self.servetime_slow
+                self.charge_price = self.p_slow* self.true_servetime
 
         return self.true_cost
 
@@ -482,7 +485,8 @@ def customer_to_dict(customer):
                       'true_cost': customer.true_cost,\
                       'true_total_wait': customer.true_total_wait,\
                       'true_queue_wait':customer.true_queue_wait,\
-                      'true_servetime': customer.true_servetime}
+                      'true_servetime': customer.true_servetime,\
+                      'charge_price': customer.charge_price}
 
     return customer_dict
 
@@ -538,6 +542,8 @@ def run_simulations(folder_name, num_runs, num_customers,p_fast,p_slow,mu_fast,m
     
     #save run params
     make_param_file(param_dict, f'{results_folder}/params_{date_str}')
+
+    runs_df=pd.DataFrame(columns=['true_cost','true_total_wait','true_queue_wait','true_servetime','charge_price'])
     
     for run in range(num_runs):
         run_str = f'run{run}'
@@ -549,6 +555,13 @@ def run_simulations(folder_name, num_runs, num_customers,p_fast,p_slow,mu_fast,m
                                                             c_fast,c_slow,lamb,\
                                                             pct_ds, log_events, random_seeds[run])
         
+        #TODO create row
+        #runs_df.loc[len(df.index)]
+        customer_results_df = pd.DataFrame([customer_to_dict(customer) for customer in customer_results])
+        selected_results=customer_results_df[['true_cost','true_total_wait','true_queue_wait','true_servetime','charge_price']]
+        avg_results=selected_results.mean()
+        runs_df.loc[len(runs_df.index)]=avg_results
+
         print(f'{run_str}: {total_cost}')
 
         #Save all results
@@ -556,8 +569,9 @@ def run_simulations(folder_name, num_runs, num_customers,p_fast,p_slow,mu_fast,m
         make_total_cost_file(total_cost, f'{results_folder}/total_cost_{date_str}_{run_str}')
         make_customer_results_file(customer_results, f'{results_folder}/customer_results_{date_str}_{run_str}')
         make_event_log_file(event_log, f'{results_folder}/event_log_{date_str}_{run_str}')
-    
 
+    avg_row=runs_df.mean()
+    return avg_row
 
 if __name__ == "__main__":
     #input params (do NOT change these between trials)
@@ -570,20 +584,20 @@ if __name__ == "__main__":
     description = "Simulation run test"
     mu_fast=20
     mu_slow=90
-    mean_wgt_ds=3
-    mean_wgt_ps=1
+    mean_wgt_ds=40 #TODO was 3
+    mean_wgt_ps=1 #TODO was 1
 
     #both have the same std. dev for now
     std_dev_wgt_ds = mean_wgt_ps/2
     std_dev_wgt_ps = mean_wgt_ps/2
 
-    c_fast=2
-    c_slow=2
-    lamb= 0.05
+    c_fast=2 #TODO
+    c_slow=2 #TODO
+    lamb= 0.1 #TODO
     pct_ds=0.3
 
     #prices (change these between trials)
-    p_fast=[0.5, 1] 
+    p_fast=[0.2,0.5, 1,2.5,5,10,15]
     p_slow=0
 
     #random seeds, if any (can be None)
@@ -603,11 +617,19 @@ if __name__ == "__main__":
 
     #Change the grid search to anything you want here - just run run_simulations for each 
     #set of parameters
+
+    results_df=pd.DataFrame(columns=['price','true_cost','true_total_wait','true_queue_wait','true_servetime','charge_price','cost_from_wait'])
+
     for price in p_fast: 
+        print(price)
 
         #Runs num_runs simulations with this set of parameters
-        run_simulations(results_folder, num_runs, num_customers,price,p_slow,mu_fast,mu_slow,\
+        results_row=run_simulations(results_folder, num_runs, num_customers,price,p_slow,mu_fast,mu_slow,\
                                                         mean_wgt_ds,mean_wgt_ps,\
                                                         std_dev_wgt_ds, std_dev_wgt_ps,\
                                                             c_fast,c_slow,lamb,\
                                                             pct_ds, log_events, random_seeds)
+        results_row['price']=price
+        results_row['cost_from_wait']=results_row['true_cost']-results_row['charge_price']
+        results_df.loc[len(results_df.index)]=results_row
+    print(results_df)
