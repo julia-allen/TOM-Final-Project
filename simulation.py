@@ -510,13 +510,13 @@ if __name__ == "__main__":
 
     num_runs = 10 #Number of simulation runs
 
-    num_customers=20
+    num_customers=10000
 
-    description = "Simulation run"
-    mu_fast=30
+    description = "Simulation run test"
+    mu_fast=20
     mu_slow=90
-    mean_wgt_ds=10
-    mean_wgt_ps=2
+    mean_wgt_ds=3
+    mean_wgt_ps=1
 
     #both have the same std. dev for now
     std_dev_wgt_ds = mean_wgt_ps/2
@@ -525,7 +525,7 @@ if __name__ == "__main__":
     c_fast=2
     c_slow=2
     lamb= 0.05
-    pct_ds=0.5
+    pct_ds=0.3
 
     #prices (change these between trials)
     p_fast=0.5
@@ -546,7 +546,8 @@ if __name__ == "__main__":
     results_folder = f'results/results_{date_str}'
     os.mkdir(results_folder)
 
-    param_dict = {'num_customers': num_customers,\
+    param_dict = {'num_runs': num_runs,\
+                  'num_customers': num_customers,\
                   'mu_fast': mu_fast,\
                   'mu_slow': mu_slow,\
                   'mean_wgt_ds': mean_wgt_ds,\
