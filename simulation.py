@@ -507,9 +507,12 @@ def make_param_file(param_dict, filename):
 if __name__ == "__main__":
     #input params (do NOT change these between trials)
     #TODO change these obviously from what they are now
+
+    num_runs = 10 #Number of simulation runs
+
     num_customers=20
 
-    description = "Testing simulator"
+    description = "Simulation run"
     mu_fast=30
     mu_slow=90
     mean_wgt_ds=10
@@ -528,22 +531,20 @@ if __name__ == "__main__":
     p_fast=0.5
     p_slow=0
 
-    #random seed, if any (can be None)
-    random_seed = None
+    #random seeds, if any (can be None)
+    #up to 20 here --> if num_runs=10, we will only use the first 10
+    random_seeds = [975, 898, 389, 672, 89, 470, 970, 17, 340, \
+                    925, 712, 609, 481, 385, 883, 833, 911, 264, 872, 553]
 
     #whether to log events (failure events always logged regardless of parameter)
     log_events = True
 
-    total_cost, customer_results, event_log = simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,\
-                                                       mean_wgt_ds,mean_wgt_ps,\
-                                                       std_dev_wgt_ds, std_dev_wgt_ps,\
-                                                        c_fast,c_slow,lamb,\
-                                                        pct_ds, log_events, random_seed)
-    
     #unique string for filenames, the time at which the results were generated for this run
     date_str = dt.datetime.now().strftime('%b%-d-%I-%M-%-S%p')
 
-    print(total_cost)
+    #make file to store runs
+    results_folder = f'results/results_{date_str}'
+    os.mkdir(results_folder)
 
     param_dict = {'num_customers': num_customers,\
                   'mu_fast': mu_fast,\
@@ -558,14 +559,27 @@ if __name__ == "__main__":
                   'pct_ds': pct_ds,\
                   'p_fast': p_fast,\
                   'p_slow': p_slow,\
-                  'random_seed': random_seed,\
+                  'random_seed': random_seeds,\
                   'log_events': log_events, 
                   'description': description}
-
-    #Save all results
-    results_folder = f'results/results_{date_str}'
-    os.mkdir(results_folder)
+    
+    #save run params
     make_param_file(param_dict, f'{results_folder}/params_{date_str}')
-    make_total_cost_file(total_cost, f'{results_folder}/total_cost_{date_str}')
-    make_customer_results_file(customer_results, f'{results_folder}/customer_results_{date_str}')
-    make_event_log_file(event_log, f'{results_folder}/event_log_{date_str}')
+
+    for run in range(num_runs):
+        run_str = f'run{run}'
+
+        total_cost, customer_results, event_log = simulate(num_customers,p_fast,p_slow,mu_fast,mu_slow,\
+                                                        mean_wgt_ds,mean_wgt_ps,\
+                                                        std_dev_wgt_ds, std_dev_wgt_ps,\
+                                                            c_fast,c_slow,lamb,\
+                                                            pct_ds, log_events, random_seeds[run])
+
+        print(f'{run_str}: {total_cost}')
+
+        #Save all results
+
+
+        make_total_cost_file(total_cost, f'{results_folder}/total_cost_{date_str}_{run_str}')
+        make_customer_results_file(customer_results, f'{results_folder}/customer_results_{date_str}_{run_str}')
+        make_event_log_file(event_log, f'{results_folder}/event_log_{date_str}_{run_str}')
