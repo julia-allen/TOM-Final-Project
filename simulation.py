@@ -632,4 +632,4 @@ if __name__ == "__main__":
         results_row['price']=price
         results_row['cost_from_wait']=results_row['true_cost']-results_row['charge_price']
         results_df.loc[len(results_df.index)]=results_row
-    print(results_df)
+    print(results_df) 
