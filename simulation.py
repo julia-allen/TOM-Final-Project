@@ -537,7 +537,7 @@ def run_simulations(folder_name, num_runs, num_customers,p_fast,p_slow,mu_fast,m
                   'description': description}
     
     #save run params
-    make_param_file(param_dict, f'{results_folder}/params_{date_str}')
+    make_param_file(param_dict, f'{results_folder}/params')
     
     for run in range(num_runs):
         run_str = f'run{run}'
@@ -553,9 +553,9 @@ def run_simulations(folder_name, num_runs, num_customers,p_fast,p_slow,mu_fast,m
 
         #Save all results
 
-        make_total_cost_file(total_cost, f'{results_folder}/total_cost_{date_str}_{run_str}')
-        make_customer_results_file(customer_results, f'{results_folder}/customer_results_{date_str}_{run_str}')
-        make_event_log_file(event_log, f'{results_folder}/event_log_{date_str}_{run_str}')
+        make_total_cost_file(total_cost, f'{results_folder}/total_cost_run_{run}')
+        make_customer_results_file(customer_results, f'{results_folder}/customer_results_run_{run}')
+        make_event_log_file(event_log, f'{results_folder}/event_log_run_{run}')
     
 
 
@@ -569,21 +569,21 @@ if __name__ == "__main__":
 
     description = "Simulation run test"
     mu_fast=20
-    mu_slow=90
-    mean_wgt_ds=3
+    mu_slow=80
+    mean_wgt_ds=20
     mean_wgt_ps=1
 
     #both have the same std. dev for now
     std_dev_wgt_ds = mean_wgt_ps/2
     std_dev_wgt_ps = mean_wgt_ps/2
 
-    c_fast=2
-    c_slow=2
+    c_fast=1
+    c_slow=4
     lamb= 0.05
     pct_ds=0.3
 
     #prices (change these between trials)
-    p_fast=[0.5, 1] 
+    p_fast=[0, 1, 5] 
     p_slow=0
 
     #random seeds, if any (can be None)
