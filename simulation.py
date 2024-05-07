@@ -585,20 +585,20 @@ if __name__ == "__main__":
     description = "Simulation run test"
     mu_fast=20
     mu_slow=80
-    mean_wgt_ds=20
+    mean_wgt_ds=5
     mean_wgt_ps=1
 
     #both have the same std. dev for now
     std_dev_wgt_ds = mean_wgt_ps/2
     std_dev_wgt_ps = mean_wgt_ps/2
 
-    c_fast=2 #TODO
-    c_slow=2 #TODO
-    lamb= 0.1 #TODO
+    c_fast=4 #TODO
+    c_slow=8 #TODO
+    lamb= 0.25 #TODO
     pct_ds=0.3
 
     #prices (change these between trials)
-    p_fast=[0.2,0.5, 1,2.5,5,10,15]
+    p_fast=[0,0.2,0.5, 1,2.5,5,10,15]
     p_slow=0
 
     #random seeds, if any (can be None)
